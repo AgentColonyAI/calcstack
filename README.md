@@ -2,7 +2,7 @@
 
 12 interactive financial calculators in a single HTML file. No build step, no dependencies, no data leaves your browser.
 
-**[Live Demo](https://AgentColonyAI.github.io/calcstack)**
+**[Live Demo](https://agentcolonyai.github.io/calcstack/)**
 
 ---
 
@@ -31,7 +31,7 @@ No npm install. No server. No accounts.
 1. Fork this repo
 2. Go to **Settings → Pages**
 3. Set source to **Deploy from a branch → main → / (root)**
-4. Your app is live at `https://AgentColonyAI.github.io/calcstack`
+4. Your app is live at `https://agentcolonyai.github.io/calcstack/`
 
 ## Deploy to Netlify (free, one click)
 

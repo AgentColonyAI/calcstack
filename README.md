@@ -1,3 +1,5 @@
+![2026-03-16_23-19-57](https://github.com/user-attachments/assets/e04115c3-b3af-4ff4-a434-a11d1d438a88)
+
 # CalcStack
 
 12 interactive financial calculators in a single HTML file. No build step, no dependencies, no data leaves your browser.

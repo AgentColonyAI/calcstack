@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CalcStack — Financial Calculators</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #ffffff;
+  --bg2: #f4f4f2;
+  --bg3: #e8e8e6;
+  --text: #1a1a1a;
+  --text2: #666664;
+  --border: rgba(0,0,0,0.09);
+  --accent: #c9a96e;
+  --accent-dim: rgba(201,169,110,0.13);
+}
+
+html.dark {
+  --bg: #141414;
+  --bg2: #1e1e1e;
+  --bg3: #272727;
+  --text: #f0f0ee;
+  --text2: #888886;
+  --border: rgba(255,255,255,0.08);
+}
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 216px;
+  min-width: 216px;
+  background: #0d0d0d;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.sidebar-logo {
+  padding: 22px 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+
+.logo-name {
+  font-size: 17px;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+}
+
+.logo-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.32);
+  margin-top: 3px;
+  letter-spacing: 0.06em;
+}
+
+.nav-group {
+  padding: 12px 0 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.nav-group:last-of-type { border-bottom: none; }
+
+.nav-group-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.36);
+  padding: 2px 18px 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 18px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.68);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: color 0.12s, background 0.12s;
+  line-height: 1;
+  user-select: none;
+}
+
+.nav-item:hover {
+  color: #ffffff;
+  background: rgba(255,255,255,0.06);
+}
+
+.nav-item.active {
+  color: #ffffff;
+  background: rgba(255,255,255,0.09);
+  border-left-color: #c9a96e;
+}
+
+.nav-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+
+.nav-item.active .nav-dot,
+.nav-item:hover .nav-dot { background: #c9a96e; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.dark-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  color: rgba(255,255,255,0.38);
+  user-select: none;
+  transition: color 0.12s;
+}
+
+.dark-toggle:hover { color: rgba(255,255,255,0.65); }
+
+.toggle-track {
+  width: 30px;
+  height: 16px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.14);
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-track.on { background: #c9a96e; }
+
+.toggle-knob {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+
+.toggle-track.on .toggle-knob { transform: translateX(14px); }
+
+/* ── MAIN ── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  min-width: 0;
+}
+
+.topbar {
+  padding: 15px 26px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.page-title {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.page-desc {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 3px;
+}
+
+.gh-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text2);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+  font-family: 'DM Mono', monospace;
+}
+
+.gh-link:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── CONTENT ── */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 26px;
+  scrollbar-width: thin;
+}
+
+.calc-section { display: none; }
+.calc-section.active { display: block; }
+
+/* ── METRICS ── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.metric {
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 13px 15px;
+}
+
+.metric-label {
+  font-size: 9.5px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  font-size: 21px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.metric-value.accent { color: var(--accent); }
+.metric-value.danger { color: #d96060; }
+
+/* ── CONTROLS ── */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 28px;
+  margin-bottom: 22px;
+}
+
+.control-group { display: flex; flex-direction: column; gap: 7px; }
+
+.control-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11.5px;
+  color: var(--text2);
+}
+
+.control-label span:last-child {
+  font-weight: 500;
+  color: var(--text);
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg3);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2.5px solid var(--bg);
+  box-shadow: 0 0 0 1.5px var(--accent);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+}
+
+input[type="number"], select {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input[type="number"]:focus, select:focus { border-color: var(--accent); }
+
+/* ── CHART ── */
+.chart-wrap {
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 15px 16px;
+  margin-bottom: 14px;
+}
+
+.chart-title {
+  font-size: 10px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-bottom: 14px;
+}
+
+/* ── CF ROWS (NPV) ── */
+.cf-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.cf-row label {
+  font-size: 11px;
+  color: var(--text2);
+  min-width: 38px;
+}
+
+.cf-row input { flex: 1; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 10px; }
+
+.btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── FORMULA ── */
+.formula {
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  font-size: 11.5px;
+  color: var(--text2);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.formula strong { color: var(--text); font-weight: 500; }
+
+/* ── STATUS BAR ── */
+.status-bar {
+  padding: 8px 26px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 10.5px;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4a9e6b;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 680px) {
+  .sidebar { width: 48px; min-width: 48px; }
+  .sidebar-logo, .nav-group-label, .nav-item span:last-child, .sidebar-footer span, .logo-sub { display: none; }
+  .logo-name { font-size: 11px; }
+  .nav-item { padding: 10px; justify-content: center; }
+  .nav-dot { width: 6px; height: 6px; }
+  .controls { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-name">CalcStack</div>
+    <div class="logo-sub">12 financial calculators</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Growth</div>
+    <div class="nav-item active" data-calc="compound"><span class="nav-dot"></span>Compound Interest</div>
+    <div class="nav-item" data-calc="savings"><span class="nav-dot"></span>Savings Goal</div>
+    <div class="nav-item" data-calc="rule72"><span class="nav-dot"></span>Rule of 72</div>
+    <div class="nav-item" data-calc="dca"><span class="nav-dot"></span>Dollar-Cost Avg</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Debt</div>
+    <div class="nav-item" data-calc="loan"><span class="nav-dot"></span>Loan / Mortgage</div>
+    <div class="nav-item" data-calc="credit"><span class="nav-dot"></span>Credit Card Payoff</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Planning</div>
+    <div class="nav-item" data-calc="retirement"><span class="nav-dot"></span>Retirement</div>
+    <div class="nav-item" data-calc="inflation"><span class="nav-dot"></span>Inflation</div>
+    <div class="nav-item" data-calc="invest"><span class="nav-dot"></span>Investment Return</div>
+    <div class="nav-item" data-calc="npv"><span class="nav-dot"></span>Net Present Value</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Business</div>
+    <div class="nav-item" data-calc="breakeven"><span class="nav-dot"></span>Break-even</div>
+    <div class="nav-item" data-calc="roi"><span class="nav-dot"></span>ROI</div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="dark-toggle" id="darkToggle">
+      <div class="toggle-track" id="toggleTrack"><div class="toggle-knob"></div></div>
+      <span>dark</span>
+    </div>
+    <span style="font-size:10px;color:rgba(255,255,255,0.18)">MIT</span>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="pageTitle">Compound Interest</div>
+      <div class="page-desc" id="pageDesc">interest on interest — exponential growth over time</div>
+    </div>
+    <a class="gh-link" href="https://github.com/yourusername/calcstack" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      CalcStack
+    </a>
+  </div>
+
+  <div class="content-area" id="contentArea">
+
+    <!-- 1. COMPOUND INTEREST -->
+    <section class="calc-section active" id="calc-compound">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Final Balance</div><div class="metric-value" id="ci-final">—</div></div>
+        <div class="metric"><div class="metric-label">Interest Earned</div><div class="metric-value accent" id="ci-interest">—</div></div>
+        <div class="metric"><div class="metric-label">Total Return</div><div class="metric-value" id="ci-return">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Principal</span><span id="ci-p-val">$10,000</span></div>
+          <input type="range" id="ci-p" min="1000" max="100000" step="500" value="10000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Annual rate</span><span id="ci-r-val">7%</span></div>
+          <input type="range" id="ci-r" min="0.5" max="20" step="0.5" value="7">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Years</span><span id="ci-t-val">20 years</span></div>
+          <input type="range" id="ci-t" min="1" max="40" step="1" value="20">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Compounding</span><span></span></div>
+          <select id="ci-n">
+            <option value="1">Yearly</option>
+            <option value="12" selected>Monthly</option>
+            <option value="52">Weekly</option>
+            <option value="365">Daily</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Balance over time</div>
+        <div style="position:relative;height:220px"><canvas id="chart-compound"></canvas></div>
+      </div>
+      <div class="formula">Formula: <strong>A = P(1 + r/n)^(nt)</strong> — P: principal · r: annual rate · n: periods/year · t: years</div>
+    </section>
+
+    <!-- 2. SAVINGS GOAL -->
+    <section class="calc-section" id="calc-savings">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Monthly Required</div><div class="metric-value" id="sg-monthly">—</div></div>
+        <div class="metric"><div class="metric-label">Total Contributed</div><div class="metric-value" id="sg-contributed">—</div></div>
+        <div class="metric"><div class="metric-label">Interest Earned</div><div class="metric-value accent" id="sg-interest">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Target amount</span><span id="sg-goal-val">$50,000</span></div>
+          <input type="range" id="sg-goal" min="5000" max="500000" step="1000" value="50000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Current savings</span><span id="sg-curr-val">$5,000</span></div>
+          <input type="range" id="sg-curr" min="0" max="100000" step="500" value="5000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Annual rate</span><span id="sg-r-val">6%</span></div>
+          <input type="range" id="sg-r" min="0.5" max="15" step="0.5" value="6">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Years to goal</span><span id="sg-t-val">10 years</span></div>
+          <input type="range" id="sg-t" min="1" max="30" step="1" value="10">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Progress to goal</div>
+        <div style="position:relative;height:220px"><canvas id="chart-savings"></canvas></div>
+      </div>
+      <div class="formula">Formula: <strong>PMT = (FV − PV×(1+r)^n) × r / ((1+r)^n − 1)</strong></div>
+    </section>
+
+    <!-- 3. RULE OF 72 -->
+    <section class="calc-section" id="calc-rule72">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Years to Double</div><div class="metric-value" id="r72-years">—</div></div>
+        <div class="metric"><div class="metric-label">Years to 4× </div><div class="metric-value" id="r72-quad">—</div></div>
+        <div class="metric"><div class="metric-label">Rate for 10yr Double</div><div class="metric-value accent" id="r72-rate10">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Annual rate</span><span id="r72-r-val">8%</span></div>
+          <input type="range" id="r72-r" min="1" max="30" step="0.5" value="8">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Starting amount</span><span id="r72-p-val">$10,000</span></div>
+          <input type="range" id="r72-p" min="1000" max="100000" step="1000" value="10000">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Doubling periods</div>
+        <div style="position:relative;height:220px"><canvas id="chart-rule72"></canvas></div>
+      </div>
+      <div class="formula">Formula: <strong>Years to double ≈ 72 / rate</strong> — quick mental math for compound growth. More precise: 69.3 / rate.</div>
+    </section>
+
+    <!-- 4. DOLLAR-COST AVERAGING -->
+    <section class="calc-section" id="calc-dca">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Final Value</div><div class="metric-value" id="dca-final">—</div></div>
+        <div class="metric"><div class="metric-label">Total Invested</div><div class="metric-value" id="dca-invested">—</div></div>
+        <div class="metric"><div class="metric-label">Total Gain</div><div class="metric-value accent" id="dca-gain">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Monthly investment</span><span id="dca-m-val">$500</span></div>
+          <input type="range" id="dca-m" min="50" max="5000" step="50" value="500">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Annual return</span><span id="dca-r-val">8%</span></div>
+          <input type="range" id="dca-r" min="1" max="20" step="0.5" value="8">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Years</span><span id="dca-t-val">20 years</span></div>
+          <input type="range" id="dca-t" min="1" max="40" step="1" value="20">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Invested vs total value over time</div>
+        <div style="position:relative;height:220px"><canvas id="chart-dca"></canvas></div>
+      </div>
+      <div class="formula">Formula: <strong>FV = PMT × ((1+r)^n − 1) / r</strong> — regular monthly contributions compounding over time</div>
+    </section>
+
+    <!-- 5. LOAN / MORTGAGE -->
+    <section class="calc-section" id="calc-loan">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Monthly Payment</div><div class="metric-value" id="loan-payment">—</div></div>
+        <div class="metric"><div class="metric-label">Total Interest</div><div class="metric-value danger" id="loan-interest">—</div></div>
+        <div class="metric"><div class="metric-label">Total Cost</div><div class="metric-value" id="loan-total">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Loan amount</span><span id="loan-p-val">$300,000</span></div>
+          <input type="range" id="loan-p" min="10000" max="1000000" step="5000" value="300000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Annual rate</span><span id="loan-r-val">6.5%</span></div>
+          <input type="range" id="loan-r" min="0.5" max="15" step="0.1" value="6.5">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Term</span><span id="loan-t-val">30 years</span></div>
+          <input type="range" id="loan-t" min="1" max="30" step="1" value="30">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Principal vs interest paid over time</div>
+        <div style="position:relative;height:210px"><canvas id="chart-loan"></canvas></div>
+      </div>
+      <div class="formula">Formula: <strong>M = P × r(1+r)^n / ((1+r)^n − 1)</strong> — standard amortization</div>
+    </section>
+
+    <!-- 6. CREDIT CARD -->
+    <section class="calc-section" id="calc-credit">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Months to Payoff</div><div class="metric-value" id="cc-months">—</div></div>
+        <div class="metric"><div class="metric-label">Total Interest</div><div class="metric-value danger" id="cc-interest">—</div></div>
+        <div class="metric"><div class="metric-label">Total Paid</div><div class="metric-value" id="cc-total">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Balance</span><span id="cc-b-val">$5,000</span></div>
+          <input type="range" id="cc-b" min="100" max="50000" step="100" value="5000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>APR</span><span id="cc-apr-val">22%</span></div>
+          <input type="range" id="cc-apr" min="5" max="35" step="0.5" value="22">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Monthly payment</span><span id="cc-pmt-val">$200</span></div>
+          <input type="range" id="cc-pmt" min="25" max="2000" step="25" value="200">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Balance paydown over time</div>
+        <div style="position:relative;height:210px"><canvas id="chart-credit"></canvas></div>
+      </div>
+      <div class="formula">Tip: <strong>minimum payments can take 10+ years</strong> — every extra dollar on payment cuts months and saves more in interest</div>
+    </section>
+
+    <!-- 7. RETIREMENT -->
+    <section class="calc-section" id="calc-retirement">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Nest Egg</div><div class="metric-value" id="ret-nest">—</div></div>
+        <div class="metric"><div class="metric-label">Monthly Income</div><div class="metric-value accent" id="ret-income">—</div></div>
+        <div class="metric"><div class="metric-label">Years to Retirement</div><div class="metric-value" id="ret-years">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Current age</span><span id="ret-age-val">30</span></div>
+          <input type="range" id="ret-age" min="18" max="65" step="1" value="30">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Retirement age</span><span id="ret-rage-val">65</span></div>
+          <input type="range" id="ret-rage" min="45" max="80" step="1" value="65">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Current savings</span><span id="ret-curr-val">$25,000</span></div>
+          <input type="range" id="ret-curr" min="0" max="500000" step="1000" value="25000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Monthly contribution</span><span id="ret-contrib-val">$500/mo</span></div>
+          <input type="range" id="ret-contrib" min="0" max="5000" step="50" value="500">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Expected return</span><span id="ret-r-val">7%</span></div>
+          <input type="range" id="ret-r" min="1" max="15" step="0.5" value="7">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Withdrawal rate</span><span id="ret-wr-val">4%</span></div>
+          <input type="range" id="ret-wr" min="2" max="8" step="0.5" value="4">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Portfolio growth to retirement</div>
+        <div style="position:relative;height:200px"><canvas id="chart-retirement"></canvas></div>
+      </div>
+      <div class="formula">Based on the <strong>4% rule</strong> — annual safe withdrawal rate historically sustainable over a 30-year retirement</div>
+    </section>
+
+    <!-- 8. INFLATION -->
+    <section class="calc-section" id="calc-inflation">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Future Cost</div><div class="metric-value" id="inf-future">—</div></div>
+        <div class="metric"><div class="metric-label">Purchasing Power Lost</div><div class="metric-value danger" id="inf-lost">—</div></div>
+        <div class="metric"><div class="metric-label">Real Value in Today's $</div><div class="metric-value" id="inf-real">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Current amount</span><span id="inf-p-val">$10,000</span></div>
+          <input type="range" id="inf-p" min="1000" max="100000" step="500" value="10000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Inflation rate</span><span id="inf-r-val">3%</span></div>
+          <input type="range" id="inf-r" min="0.5" max="15" step="0.5" value="3">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Years</span><span id="inf-t-val">20 years</span></div>
+          <input type="range" id="inf-t" min="1" max="50" step="1" value="20">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Purchasing power erosion</div>
+        <div style="position:relative;height:220px"><canvas id="chart-inflation"></canvas></div>
+      </div>
+      <div class="formula">Formula: <strong>Future Cost = P × (1+r)^t</strong> — how much you'll need in the future to buy what $P buys today</div>
+    </section>
+
+    <!-- 9. INVESTMENT RETURN -->
+    <section class="calc-section" id="calc-invest">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Final Value</div><div class="metric-value" id="inv-final">—</div></div>
+        <div class="metric"><div class="metric-label">Total Contributed</div><div class="metric-value" id="inv-contributed">—</div></div>
+        <div class="metric"><div class="metric-label">Total Gains</div><div class="metric-value accent" id="inv-gains">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Initial investment</span><span id="inv-p-val">$10,000</span></div>
+          <input type="range" id="inv-p" min="0" max="100000" step="500" value="10000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Monthly addition</span><span id="inv-m-val">$200/mo</span></div>
+          <input type="range" id="inv-m" min="0" max="5000" step="50" value="200">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Annual return</span><span id="inv-r-val">8%</span></div>
+          <input type="range" id="inv-r" min="1" max="20" step="0.5" value="8">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Years</span><span id="inv-t-val">25 years</span></div>
+          <input type="range" id="inv-t" min="1" max="40" step="1" value="25">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Growth with regular contributions</div>
+        <div style="position:relative;height:220px"><canvas id="chart-invest"></canvas></div>
+      </div>
+      <div class="formula">Combines <strong>lump-sum compound growth</strong> with <strong>future value of an annuity</strong> for monthly contributions</div>
+    </section>
+
+    <!-- 10. NPV -->
+    <section class="calc-section" id="calc-npv">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Net Present Value</div><div class="metric-value" id="npv-result">—</div></div>
+        <div class="metric"><div class="metric-label">Decision</div><div class="metric-value accent" id="npv-decision">—</div></div>
+        <div class="metric"><div class="metric-label">Sum of Cash Flows</div><div class="metric-value" id="npv-sum">—</div></div>
+      </div>
+      <div style="margin-bottom:18px">
+        <div class="control-group" style="max-width:320px;margin-bottom:14px">
+          <div class="control-label"><span>Discount rate</span><span id="npv-r-val">10%</span></div>
+          <input type="range" id="npv-r" min="1" max="30" step="0.5" value="10">
+        </div>
+        <div style="font-size:10.5px;color:var(--text2);margin-bottom:8px">Cash flows — Year 0 is typically the initial investment (negative)</div>
+        <div id="npv-cashflows"></div>
+        <div class="btn-row">
+          <button class="btn" id="npv-add">+ add year</button>
+          <button class="btn" id="npv-remove">− remove</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Cash flows by year</div>
+        <div style="position:relative;height:200px"><canvas id="chart-npv"></canvas></div>
+      </div>
+      <div class="formula">Formula: <strong>NPV = Σ CF_t / (1+r)^t</strong> — positive NPV means the investment creates value at your discount rate</div>
+    </section>
+
+    <!-- 11. BREAK-EVEN -->
+    <section class="calc-section" id="calc-breakeven">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Break-even Units</div><div class="metric-value" id="be-units">—</div></div>
+        <div class="metric"><div class="metric-label">Break-even Revenue</div><div class="metric-value accent" id="be-revenue">—</div></div>
+        <div class="metric"><div class="metric-label">Contribution Margin</div><div class="metric-value" id="be-margin">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Fixed costs / month</span><span id="be-fc-val">$10,000</span></div>
+          <input type="range" id="be-fc" min="500" max="200000" step="500" value="10000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Price per unit</span><span id="be-price-val">$50</span></div>
+          <input type="range" id="be-price" min="1" max="1000" step="1" value="50">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Variable cost / unit</span><span id="be-vc-val">$20</span></div>
+          <input type="range" id="be-vc" min="0" max="900" step="1" value="20">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Revenue vs total costs</div>
+        <div style="position:relative;height:220px"><canvas id="chart-breakeven"></canvas></div>
+      </div>
+      <div class="formula">Formula: <strong>Break-even units = Fixed Costs / (Price − Variable Cost per unit)</strong></div>
+    </section>
+
+    <!-- 12. ROI -->
+    <section class="calc-section" id="calc-roi">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">ROI</div><div class="metric-value" id="roi-pct">—</div></div>
+        <div class="metric"><div class="metric-label">Annualized ROI</div><div class="metric-value accent" id="roi-annual">—</div></div>
+        <div class="metric"><div class="metric-label">Net Gain</div><div class="metric-value" id="roi-gain">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Initial investment</span><span id="roi-p-val">$10,000</span></div>
+          <input type="range" id="roi-p" min="100" max="500000" step="100" value="10000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Final value</span><span id="roi-fv-val">$15,000</span></div>
+          <input type="range" id="roi-fv" min="100" max="500000" step="100" value="15000">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Duration</span><span id="roi-t-val">3 years</span></div>
+          <input type="range" id="roi-t" min="0.25" max="20" step="0.25" value="3">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Investment growth curve</div>
+        <div style="position:relative;height:200px"><canvas id="chart-roi"></canvas></div>
+      </div>
+      <div class="formula">ROI: <strong>(Final − Initial) / Initial × 100</strong> · Annualized: <strong>(Final/Initial)^(1/t) − 1</strong></div>
+    </section>
+
+  </div>
+
+  <div class="status-bar">
+    <span><span class="status-dot"></span>all calculations run locally in your browser</span>
+    <span>·</span>
+    <span>no data sent anywhere</span>
+    <span>·</span>
+    <span>open source · MIT license</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = (n, d=0) => (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const fmtN = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const pct = n => n.toFixed(1) + '%';
+
+const GOLD   = '#c9a96e';
+const GOLD_A = 'rgba(201,169,110,0.15)';
+const GRAY   = '#888886';
+const GRAY_A = 'rgba(136,136,134,0.15)';
+const RED    = '#d96060';
+const RED_A  = 'rgba(217,96,96,0.15)';
+
+function textCol() { return document.documentElement.classList.contains('dark') ? '#c0c0be' : '#555553'; }
+function gridCol() { return document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'; }
+
+const charts = {};
+
+function mkChart(id, cfg) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const canvas = $(id);
+  if (!canvas) return;
+  const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 200 },
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } }
+    },
+    scales: {
+      x: { ticks: { color: textCol(), font: { size: 10, family: "'DM Mono', monospace" }, maxTicksLimit: 10, autoSkip: true }, grid: { color: gridCol() }, border: { color: gridCol() } },
+      y: { ticks: { color: textCol(), font: { size: 10, family: "'DM Mono', monospace" }, callback: v => fmt(v) }, grid: { color: gridCol() }, border: { color: gridCol() } }
+    }
+  };
+  // Deep merge options
+  const mergedOpts = { ...baseOpts, ...cfg.options };
+  if (cfg.options && cfg.options.scales) {
+    mergedOpts.scales = { ...baseOpts.scales };
+    if (cfg.options.scales.x) mergedOpts.scales.x = { ...baseOpts.scales.x, ...cfg.options.scales.x };
+    if (cfg.options.scales.y) mergedOpts.scales.y = { ...baseOpts.scales.y, ...cfg.options.scales.y };
+    if (cfg.options.scales.x && cfg.options.scales.x.stacked !== undefined) mergedOpts.scales.x = { ...mergedOpts.scales.x, stacked: cfg.options.scales.x.stacked };
+    if (cfg.options.scales.y && cfg.options.scales.y.stacked !== undefined) mergedOpts.scales.y = { ...mergedOpts.scales.y, stacked: cfg.options.scales.y.stacked };
+  }
+  charts[id] = new Chart(canvas, { type: cfg.type, data: cfg.data, options: mergedOpts });
+}
+
+function slider(id, valId, fmtFn) {
+  const el = $(id), out = $(valId);
+  if (!el || !out) return;
+  const upd = () => { out.textContent = fmtFn(+el.value); };
+  el.addEventListener('input', upd);
+  upd();
+}
+
+function bind(ids, fn) {
+  ids.forEach(id => { const el = $(id); if (el) el.addEventListener('input', fn); });
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+const navMeta = {
+  compound:   ['Compound Interest',  'interest on interest — exponential growth over time'],
+  savings:    ['Savings Goal',        'how much to save monthly to hit your target'],
+  rule72:     ['Rule of 72',          'quick mental estimate for how fast money doubles'],
+  dca:        ['Dollar-Cost Averaging','smoothing volatility with regular buys'],
+  loan:       ['Loan / Mortgage',     'monthly payment and total interest on any loan'],
+  credit:     ['Credit Card Payoff',  'true cost of carrying a credit card balance'],
+  retirement: ['Retirement',          'nest egg projection with the 4% rule'],
+  inflation:  ['Inflation',           'purchasing power erosion over time'],
+  invest:     ['Investment Return',   'lump sum + regular contributions over time'],
+  npv:        ['Net Present Value',   'is a future cash flow worth it today?'],
+  breakeven:  ['Break-even',          'units and revenue needed to cover costs'],
+  roi:        ['ROI',                 'simple and annualized return on any investment']
+};
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const calc = item.dataset.calc;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.calc-section').forEach(s => s.classList.remove('active'));
+    item.classList.add('active');
+    $('calc-' + calc).classList.add('active');
+    const m = navMeta[calc];
+    $('pageTitle').textContent = m[0];
+    $('pageDesc').textContent = m[1];
+    $('contentArea').scrollTop = 0;
+    calcFns[calc]();
+  });
+});
+
+// ── DARK MODE ─────────────────────────────────────────────────────────────────
+let dark = false;
+$('darkToggle').addEventListener('click', () => {
+  dark = !dark;
+  document.documentElement.classList.toggle('dark', dark);
+  $('toggleTrack').classList.toggle('on', dark);
+  Object.keys(charts).forEach(id => { if (charts[id]) { charts[id].destroy(); delete charts[id]; } });
+  const active = document.querySelector('.nav-item.active');
+  if (active) calcFns[active.dataset.calc]();
+});
+
+// ── 1. COMPOUND INTEREST ──────────────────────────────────────────────────────
+function calcCompound() {
+  const P = +$('ci-p').value, r = +$('ci-r').value / 100, t = +$('ci-t').value, n = +$('ci-n').value;
+  const A = P * Math.pow(1 + r / n, n * t);
+  $('ci-final').textContent    = fmt(A);
+  $('ci-interest').textContent = fmt(A - P);
+  $('ci-return').textContent   = pct((A - P) / P * 100);
+  const labels = [], data = [];
+  for (let y = 0; y <= t; y++) {
+    labels.push(y === 0 ? 'Now' : 'Yr ' + y);
+    data.push(Math.round(P * Math.pow(1 + r / n, n * y)));
+  }
+  mkChart('chart-compound', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: GOLD, backgroundColor: GOLD_A, fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 }
+  ]}});
+}
+slider('ci-p', 'ci-p-val', v => fmt(v));
+slider('ci-r', 'ci-r-val', v => pct(v));
+slider('ci-t', 'ci-t-val', v => v + ' years');
+bind(['ci-p','ci-r','ci-t','ci-n'], calcCompound);
+
+// ── 2. SAVINGS GOAL ───────────────────────────────────────────────────────────
+function calcSavings() {
+  const goal = +$('sg-goal').value, curr = +$('sg-curr').value;
+  const r = +$('sg-r').value / 100 / 12, t = +$('sg-t').value * 12;
+  const fvCurr = curr * Math.pow(1 + r, t);
+  const need = goal - fvCurr;
+  const pmt = r > 0 ? need * r / (Math.pow(1 + r, t) - 1) : need / t;
+  const contributed = Math.max(0, pmt) * t;
+  $('sg-monthly').textContent     = pmt > 0 ? fmt(pmt) : '$0 (already on track!)';
+  $('sg-contributed').textContent = fmt(contributed);
+  $('sg-interest').textContent    = fmt(Math.max(0, goal - curr - contributed));
+  const labels = [], data = [], goalLine = [];
+  const step = Math.max(1, Math.floor(t / 24));
+  for (let m = 0; m <= t; m += step) {
+    labels.push('Mo ' + m);
+    const v = curr * Math.pow(1 + r, m) + (pmt > 0 && r > 0 ? pmt * (Math.pow(1 + r, m) - 1) / r : pmt * m);
+    data.push(Math.min(Math.round(v), goal * 1.1));
+    goalLine.push(goal);
+  }
+  mkChart('chart-savings', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: GOLD, backgroundColor: GOLD_A, fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+    { data: goalLine, borderColor: GRAY, borderDash: [5,3], fill: false, pointRadius: 0, borderWidth: 1.5 }
+  ]}});
+}
+slider('sg-goal', 'sg-goal-val', v => fmt(v));
+slider('sg-curr', 'sg-curr-val', v => fmt(v));
+slider('sg-r',    'sg-r-val',    v => pct(v));
+slider('sg-t',    'sg-t-val',    v => v + ' years');
+bind(['sg-goal','sg-curr','sg-r','sg-t'], calcSavings);
+
+// ── 3. RULE OF 72 ─────────────────────────────────────────────────────────────
+function calcRule72() {
+  const r = +$('r72-r').value, P = +$('r72-p').value;
+  const yrs = 72 / r;
+  $('r72-years').textContent  = yrs.toFixed(1) + ' yrs';
+  $('r72-quad').textContent   = (yrs * 2).toFixed(1) + ' yrs';
+  $('r72-rate10').textContent = pct(72 / 10);
+  const labels = [], data = [];
+  let v = P, y = 0, count = 0;
+  while (v < P * 16 && count < 8) {
+    labels.push('Yr ' + Math.round(y));
+    data.push(Math.round(v));
+    v *= 2; y += yrs; count++;
+  }
+  mkChart('chart-rule72', { type: 'bar', data: { labels, datasets: [
+    { data, backgroundColor: data.map((_, i) => i === 0 ? GRAY_A : GOLD_A), borderColor: data.map((_, i) => i === 0 ? GRAY : GOLD), borderWidth: 1.5, borderRadius: 6 }
+  ]}, options: { scales: { y: { ticks: { callback: v => fmt(v) } } } }});
+}
+slider('r72-r', 'r72-r-val', v => pct(v));
+slider('r72-p', 'r72-p-val', v => fmt(v));
+bind(['r72-r','r72-p'], calcRule72);
+
+// ── 4. DCA ────────────────────────────────────────────────────────────────────
+function calcDca() {
+  const m = +$('dca-m').value, r = +$('dca-r').value / 100 / 12, t = +$('dca-t').value;
+  const months = t * 12;
+  const final = m * (Math.pow(1 + r, months) - 1) / r;
+  const invested = m * months;
+  $('dca-final').textContent    = fmt(final);
+  $('dca-invested').textContent = fmt(invested);
+  $('dca-gain').textContent     = fmt(final - invested);
+  const labels = [], invData = [], gainData = [];
+  for (let y = 0; y <= t; y++) {
+    labels.push(y === 0 ? 'Now' : 'Yr ' + y);
+    const mn = y * 12;
+    const fv = mn > 0 ? m * (Math.pow(1 + r, mn) - 1) / r : 0;
+    invData.push(Math.round(m * mn));
+    gainData.push(Math.max(0, Math.round(fv - m * mn)));
+  }
+  mkChart('chart-dca', { type: 'bar', data: { labels, datasets: [
+    { data: invData,  backgroundColor: GRAY_A, borderColor: GRAY, borderWidth: 1, borderRadius: 3, label: 'Invested' },
+    { data: gainData, backgroundColor: GOLD_A, borderColor: GOLD, borderWidth: 1, borderRadius: 3, label: 'Gains' }
+  ]}, options: { scales: { x: { stacked: true }, y: { stacked: true } } }});
+}
+slider('dca-m', 'dca-m-val', v => fmt(v));
+slider('dca-r', 'dca-r-val', v => pct(v));
+slider('dca-t', 'dca-t-val', v => v + ' years');
+bind(['dca-m','dca-r','dca-t'], calcDca);
+
+// ── 5. LOAN ───────────────────────────────────────────────────────────────────
+function calcLoan() {
+  const P = +$('loan-p').value, r = +$('loan-r').value / 100 / 12, n = +$('loan-t').value * 12;
+  const M = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  const total = M * n;
+  $('loan-payment').textContent  = fmt(M);
+  $('loan-interest').textContent = fmt(total - P);
+  $('loan-total').textContent    = fmt(total);
+  const labels = [], principal = [], interest = [];
+  const step = Math.max(1, Math.floor(n / 30));
+  for (let mo = 0; mo <= n; mo += step) {
+    labels.push(mo === 0 ? 'Now' : 'Yr ' + Math.round(mo/12));
+    const bal = Math.max(0, P * Math.pow(1+r, mo) - M * (Math.pow(1+r, mo) - 1) / r);
+    const paidSoFar = M * mo;
+    const intPaid = Math.max(0, paidSoFar - (P - bal));
+    principal.push(Math.round(P - bal));
+    interest.push(Math.round(intPaid));
+  }
+  mkChart('chart-loan', { type: 'bar', data: { labels, datasets: [
+    { data: principal, backgroundColor: GOLD_A, borderColor: GOLD, borderWidth: 1, label: 'Principal paid', borderRadius: 2 },
+    { data: interest,  backgroundColor: RED_A,  borderColor: RED,  borderWidth: 1, label: 'Interest paid',  borderRadius: 2 }
+  ]}, options: { scales: { x: { stacked: true }, y: { stacked: true } } }});
+}
+slider('loan-p', 'loan-p-val', v => fmt(v));
+slider('loan-r', 'loan-r-val', v => pct(v));
+slider('loan-t', 'loan-t-val', v => v + ' years');
+bind(['loan-p','loan-r','loan-t'], calcLoan);
+
+// ── 6. CREDIT CARD ────────────────────────────────────────────────────────────
+function calcCredit() {
+  const B = +$('cc-b').value, apr = +$('cc-apr').value / 100 / 12, pmt = +$('cc-pmt').value;
+  if (pmt <= B * apr) {
+    $('cc-months').textContent = '∞ — increase payment';
+    $('cc-interest').textContent = $('cc-total').textContent = '—';
+    return;
+  }
+  const months = Math.ceil(-Math.log(1 - B * apr / pmt) / Math.log(1 + apr));
+  const total = pmt * months;
+  $('cc-months').textContent   = months + ' mo (' + (months/12).toFixed(1) + ' yr)';
+  $('cc-interest').textContent = fmt(total - B);
+  $('cc-total').textContent    = fmt(total);
+  const labels = [], data = [];
+  let bal = B;
+  const step = Math.max(1, Math.floor(months / 30));
+  for (let mo = 0; mo <= months && bal > 0; mo++) {
+    if (mo % step === 0) { labels.push('Mo ' + mo); data.push(Math.max(0, Math.round(bal))); }
+    bal = bal * (1 + apr) - pmt;
+  }
+  labels.push('Mo ' + months); data.push(0);
+  mkChart('chart-credit', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: RED, backgroundColor: RED_A, fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2 }
+  ]}});
+}
+slider('cc-b',   'cc-b-val',   v => fmt(v));
+slider('cc-apr', 'cc-apr-val', v => pct(v));
+slider('cc-pmt', 'cc-pmt-val', v => fmt(v));
+bind(['cc-b','cc-apr','cc-pmt'], calcCredit);
+
+// ── 7. RETIREMENT ─────────────────────────────────────────────────────────────
+function calcRetirement() {
+  const age = +$('ret-age').value, rage = +$('ret-rage').value;
+  const yrs = Math.max(0, rage - age);
+  const curr = +$('ret-curr').value, contrib = +$('ret-contrib').value;
+  const rm = +$('ret-r').value / 100 / 12, wr = +$('ret-wr').value / 100;
+  const months = yrs * 12;
+  const nest = curr * Math.pow(1+rm, months) + (months > 0 ? contrib * (Math.pow(1+rm, months) - 1) / rm : 0);
+  $('ret-nest').textContent   = fmt(nest);
+  $('ret-income').textContent = fmt(nest * wr / 12) + '/mo';
+  $('ret-years').textContent  = yrs + ' yrs';
+  const labels = [], data = [];
+  for (let y = 0; y <= yrs; y++) {
+    labels.push(age + y);
+    const mn = y * 12;
+    data.push(Math.round(curr * Math.pow(1+rm, mn) + (mn > 0 ? contrib * (Math.pow(1+rm, mn) - 1) / rm : 0)));
+  }
+  mkChart('chart-retirement', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: GOLD, backgroundColor: GOLD_A, fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }
+  ]}});
+}
+slider('ret-age',    'ret-age-val',    v => v + '');
+slider('ret-rage',   'ret-rage-val',   v => v + '');
+slider('ret-curr',   'ret-curr-val',   v => fmt(v));
+slider('ret-contrib','ret-contrib-val',v => fmt(v) + '/mo');
+slider('ret-r',      'ret-r-val',      v => pct(v));
+slider('ret-wr',     'ret-wr-val',     v => pct(v));
+bind(['ret-age','ret-rage','ret-curr','ret-contrib','ret-r','ret-wr'], calcRetirement);
+
+// ── 8. INFLATION ──────────────────────────────────────────────────────────────
+function calcInflation() {
+  const P = +$('inf-p').value, r = +$('inf-r').value / 100, t = +$('inf-t').value;
+  const future = P * Math.pow(1+r, t);
+  const real   = P / Math.pow(1+r, t);
+  $('inf-future').textContent = fmt(future);
+  $('inf-lost').textContent   = pct((1 - real/P) * 100);
+  $('inf-real').textContent   = fmt(real);
+  const labels = [], data = [], baseline = [];
+  for (let y = 0; y <= t; y++) {
+    labels.push(y === 0 ? 'Now' : 'Yr ' + y);
+    data.push(Math.round(P / Math.pow(1+r, y)));
+    baseline.push(P);
+  }
+  mkChart('chart-inflation', { type: 'line', data: { labels, datasets: [
+    { data,     borderColor: RED,  backgroundColor: RED_A, fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+    { data: baseline, borderColor: GRAY, borderDash: [5,3], fill: false, pointRadius: 0, borderWidth: 1.5 }
+  ]}});
+}
+slider('inf-p', 'inf-p-val', v => fmt(v));
+slider('inf-r', 'inf-r-val', v => pct(v));
+slider('inf-t', 'inf-t-val', v => v + ' years');
+bind(['inf-p','inf-r','inf-t'], calcInflation);
+
+// ── 9. INVESTMENT RETURN ──────────────────────────────────────────────────────
+function calcInvest() {
+  const P = +$('inv-p').value, m = +$('inv-m').value, r = +$('inv-r').value / 100 / 12, t = +$('inv-t').value;
+  const months = t * 12;
+  const lump = P * Math.pow(1+r, months);
+  const ann  = months > 0 ? m * (Math.pow(1+r, months) - 1) / r : 0;
+  const final = lump + ann;
+  const contributed = P + m * months;
+  $('inv-final').textContent       = fmt(final);
+  $('inv-contributed').textContent = fmt(contributed);
+  $('inv-gains').textContent       = fmt(final - contributed);
+  const labels = [], totalData = [], contribData = [];
+  for (let y = 0; y <= t; y++) {
+    labels.push(y === 0 ? 'Now' : 'Yr ' + y);
+    const mn = y * 12;
+    const lp = P * Math.pow(1+r, mn);
+    const ap = mn > 0 ? m * (Math.pow(1+r, mn) - 1) / r : 0;
+    totalData.push(Math.round(lp + ap));
+    contribData.push(Math.round(P + m * mn));
+  }
+  mkChart('chart-invest', { type: 'line', data: { labels, datasets: [
+    { data: totalData,   borderColor: GOLD, backgroundColor: GOLD_A, fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+    { data: contribData, borderColor: GRAY, borderDash: [5,3], fill: false, pointRadius: 0, borderWidth: 1.5 }
+  ]}});
+}
+slider('inv-p', 'inv-p-val', v => fmt(v));
+slider('inv-m', 'inv-m-val', v => fmt(v) + '/mo');
+slider('inv-r', 'inv-r-val', v => pct(v));
+slider('inv-t', 'inv-t-val', v => v + ' years');
+bind(['inv-p','inv-m','inv-r','inv-t'], calcInvest);
+
+// ── 10. NPV ───────────────────────────────────────────────────────────────────
+let npvFlows = [-50000, 15000, 20000, 25000, 20000];
+
+function renderNpvInputs() {
+  const c = $('npv-cashflows');
+  c.innerHTML = '';
+  npvFlows.forEach((cf, i) => {
+    const row = document.createElement('div');
+    row.className = 'cf-row';
+    const lbl = document.createElement('label');
+    lbl.textContent = 'Yr ' + i;
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.value = cf; inp.dataset.idx = i;
+    inp.addEventListener('input', e => { npvFlows[i] = +e.target.value; calcNpv(); });
+    row.appendChild(lbl); row.appendChild(inp);
+    c.appendChild(row);
+  });
+}
+
+function calcNpv() {
+  const r = +$('npv-r').value / 100;
+  let npv = 0;
+  npvFlows.forEach((cf, i) => { npv += cf / Math.pow(1+r, i); });
+  const sum = npvFlows.reduce((a, b) => a + b, 0);
+  const pos = npv >= 0;
+  $('npv-result').textContent   = fmt(npv);
+  $('npv-result').className     = 'metric-value ' + (pos ? 'accent' : 'danger');
+  $('npv-decision').textContent = pos ? 'Accept ✓' : 'Reject ✗';
+  $('npv-decision').className   = 'metric-value ' + (pos ? 'accent' : 'danger');
+  $('npv-sum').textContent      = fmt(sum);
+  mkChart('chart-npv', { type: 'bar', data: {
+    labels: npvFlows.map((_, i) => 'Yr ' + i),
+    datasets: [{ data: npvFlows, backgroundColor: npvFlows.map(v => v >= 0 ? GOLD_A : RED_A), borderColor: npvFlows.map(v => v >= 0 ? GOLD : RED), borderWidth: 1.5, borderRadius: 5 }]
+  }, options: { scales: { y: { ticks: { callback: v => fmt(v) } } } }});
+}
+
+$('npv-add').addEventListener('click', () => { npvFlows.push(10000); renderNpvInputs(); calcNpv(); });
+$('npv-remove').addEventListener('click', () => { if (npvFlows.length > 2) { npvFlows.pop(); renderNpvInputs(); calcNpv(); } });
+slider('npv-r', 'npv-r-val', v => pct(v));
+$('npv-r').addEventListener('input', calcNpv);
+
+// ── 11. BREAK-EVEN ────────────────────────────────────────────────────────────
+function calcBreakeven() {
+  const fc = +$('be-fc').value, price = +$('be-price').value, vc = +$('be-vc').value;
+  if (price <= vc) {
+    $('be-units').textContent = '∞';
+    $('be-revenue').textContent = $('be-margin').textContent = '—'; return;
+  }
+  const cm = price - vc;
+  const units = Math.ceil(fc / cm);
+  $('be-units').textContent   = fmtN(units);
+  $('be-revenue').textContent = fmt(units * price);
+  $('be-margin').textContent  = pct(cm / price * 100);
+  const maxU = units * 2.5, steps = 25;
+  const labels = [], rev = [], costs = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = Math.round(maxU * i / steps);
+    labels.push(fmtN(u));
+    rev.push(u * price);
+    costs.push(fc + u * vc);
+  }
+  mkChart('chart-breakeven', { type: 'line', data: { labels, datasets: [
+    { data: rev,   borderColor: GOLD, fill: false, tension: 0, pointRadius: 0, borderWidth: 2, label: 'Revenue' },
+    { data: costs, borderColor: RED,  fill: false, tension: 0, pointRadius: 0, borderWidth: 2, label: 'Total Costs' }
+  ]}});
+}
+slider('be-fc',    'be-fc-val',    v => fmt(v));
+slider('be-price', 'be-price-val', v => fmt(v));
+slider('be-vc',    'be-vc-val',    v => fmt(v));
+bind(['be-fc','be-price','be-vc'], calcBreakeven);
+
+// ── 12. ROI ───────────────────────────────────────────────────────────────────
+function calcRoi() {
+  const P = +$('roi-p').value, FV = +$('roi-fv').value, t = +$('roi-t').value;
+  const roi       = (FV - P) / P * 100;
+  const annualized = (Math.pow(FV / P, 1 / t) - 1) * 100;
+  $('roi-pct').textContent    = pct(roi);
+  $('roi-annual').textContent = pct(annualized);
+  $('roi-gain').textContent   = fmt(FV - P);
+  const steps = 30, labels = [], data = [];
+  for (let i = 0; i <= steps; i++) {
+    const yr = t * i / steps;
+    labels.push(yr.toFixed(1) + 'yr');
+    data.push(Math.round(P * Math.pow(FV / P, i / steps)));
+  }
+  mkChart('chart-roi', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: GOLD, backgroundColor: GOLD_A, fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }
+  ]}});
+}
+slider('roi-p',  'roi-p-val',  v => fmt(v));
+slider('roi-fv', 'roi-fv-val', v => fmt(v));
+slider('roi-t',  'roi-t-val',  v => v + ' years');
+bind(['roi-p','roi-fv','roi-t'], calcRoi);
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+const calcFns = {
+  compound: calcCompound, savings: calcSavings, rule72: calcRule72, dca: calcDca,
+  loan: calcLoan, credit: calcCredit, retirement: calcRetirement, inflation: calcInflation,
+  invest: calcInvest, npv: () => { renderNpvInputs(); calcNpv(); }, breakeven: calcBreakeven, roi: calcRoi
+};
+calcCompound();
+</script>
+</body>
+</html>
